@@ -138,7 +138,7 @@ int main(int argc, const char *argv[])
 	char	*p;
 
 	if (getgid() == 0) {
-		fprintf(stderr, "Group id is root, exitting.\n");
+		fprintf(stderr, "Group id is root, exiting.\n");
 		return 1;
 	}
 	if (getuid() == 0) {
