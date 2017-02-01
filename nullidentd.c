@@ -138,11 +138,11 @@ int main(int argc, const char *argv[])
 
 	if (getgid() == 0) {
 		fprintf(stderr, "Group id is root, exiting.\n");
-		return 1;
+		exit(1);
 	}
 	if (getuid() == 0) {
 		fprintf(stderr, "User id is root, exiting.\n");
-		return 1;
+		exit(1);
 	}
 
 	infd = fileno(stdin);
@@ -186,6 +186,6 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	return 0;
+	exit(0);
 }
 
