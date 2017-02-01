@@ -93,6 +93,31 @@ ret:
 
 }
 
+int sanitize_response(char *buffer, size_t size, const char *input)
+{
+	int			i;
+	const char	*s;
+	char		*t;
+
+	if (!buffer || !input) {
+		return -1;
+	}
+
+	for (i = 1, s = input, t = buffer; i < size && *s; i++, s++) {
+		switch (*s) {
+			case '\012':
+			case '\015':
+				break;
+			default:
+				*t++ = *s;
+				break;
+		}
+		*t = '\0';
+	}
+
+	return (i - 1);
+}
+
 void session_timeout(int foo)
 {
 	exit(0);
@@ -103,10 +128,14 @@ int main(int argc, const char *argv[])
 	char	c;
 	int		infd;
 	int		outfd;
+	int		data_len;
 	int		response_len;
+	int		use_random;
 	char	response[256];
 	char	request[129];
-	char	data[9];
+	char	data[21];
+	char	*e;
+	char	*p;
 
 	if (getgid() == 0) {
 		fprintf(stderr, "Group id is root, exitting.\n");
@@ -120,6 +149,16 @@ int main(int argc, const char *argv[])
 	infd = fileno(stdin);
 	outfd = fileno(stdout);
 
+	if (e = getenv("IDENT_USER")) {
+		data_len = sanitize_response(data, sizeof(data), (const char *)e);
+		use_random = (data_len <= 0);
+	} else if (argc > 1) {
+		data_len = sanitize_response(data, sizeof(data), argv[1]);
+		use_random = (data_len <= 0);
+	} else {
+		use_random = 1;
+	}
+
 	// set the session timeout
 	signal(SIGALRM, session_timeout);
 	alarm(SESSION_TIMEOUT);
@@ -127,7 +166,7 @@ int main(int argc, const char *argv[])
 	for (;;) {
 		memset(response, 0, sizeof(response));
 		memset(request, 0, sizeof(request));
-		memset(data, 0, sizeof(data));
+
 		/* read the request */
 		if (!read_request(infd, request, sizeof(request))) {
 			/* error or timed out */
@@ -135,9 +174,13 @@ int main(int argc, const char *argv[])
 		}
 
 		/* format the response */
-		read_random(data, 8);
+		if (use_random) {
+			memset(data, 0, sizeof(data));
+			read_random(data, 8);
+		}
 
 		response_len = snprintf(response, sizeof(response), "%.20s : USERID : UNIX : %.20s\r\n", request, data);
+
 		/* send the line */
 		if (!write_response(outfd, response, response_len)) {
 			goto done;
