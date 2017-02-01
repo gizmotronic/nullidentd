@@ -87,7 +87,6 @@ int read_random(char *buffer, size_t size)
 		p += 2;
 	}
 
-ret:
 	fclose(randfd);
 	return data_read;
 
@@ -170,7 +169,7 @@ int main(int argc, const char *argv[])
 		/* read the request */
 		if (!read_request(infd, request, sizeof(request))) {
 			/* error or timed out */
-			goto done;
+			break;
 		}
 
 		/* format the response */
@@ -183,11 +182,10 @@ int main(int argc, const char *argv[])
 
 		/* send the line */
 		if (!write_response(outfd, response, response_len)) {
-			goto done;
+			break;
 		}
 	}
 
-done:
 	return 0;
 }
 
